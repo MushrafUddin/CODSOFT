@@ -1,0 +1,39 @@
+import torch
+import torchvision.transforms as transforms
+from PIL import Image
+from torchvision import models
+import torchvision
+import spacy
+
+# Load a pre-trained image classification model (ResNet)
+resnet = models.resnet50(pretrained=True)
+resnet.eval()
+
+# Load a pre-trained NLP model for captioning (Spacy for simplicity)
+nlp = spacy.load("en_core_web_sm")
+
+# Define image preprocessing function
+def preprocess_image(image_path):
+    transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+    image = Image.open(image_path).convert('RGB')
+    image = transform(image).unsqueeze(0)
+    return image
+
+# Generate image caption (simple version based on ResNet classes)
+def generate_caption(image_path):
+    image = preprocess_image(image_path)
+    with torch.no_grad():
+        outputs = resnet(image)
+    _, predicted = torch.max(outputs, 1)
+    label = torchvision.datasets.IMAGENET_CLASSES[predicted.item()]
+    caption = f"This is an image of a {label}."
+    return caption
+
+# Example usage
+image_path = "example.jpg"  # Replace with actual image path
+caption = generate_caption(image_path)
+print("Generated Caption:", caption)
